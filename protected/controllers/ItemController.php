@@ -79,8 +79,7 @@ class ItemController extends Controller
             if(!isset($data['error']))
             {
                 $pay_for_item->item_id = $model->item_id;
- //               $pay_for_item->user_id = Yii::app()->user->getId();
-                $pay_for_item->user_id = 11;
+                $pay_for_item->user_id = Yii::app()->user->getId();
                 $pay_for_item->price   = $_POST['i_p'] ;
                 if($pay_for_item->save())
                 {
@@ -102,8 +101,7 @@ class ItemController extends Controller
         $model        = $this->loadModel();
         $pay_for_item = new pay_for_item();
         $pay_for_item->item_id = $model->item_id;
-//               $pay_for_item->user_id = Yii::app()->user->getId();
-        $pay_for_item->user_id = 11;
+        $pay_for_item->user_id = Yii::app()->user->getId();
         $pay_for_item->price   = $model->item_direct_sale_price;
         if($pay_for_item->save())
         {
@@ -232,6 +230,7 @@ class ItemController extends Controller
             }
             $model->item_pic   = join($map, ",");
             $model->item_date_created = time();
+            $model->user_id           =  Yii::app()->user->getId(); 
 			if($model->save())
             {
                 $model->saveFile($list);
@@ -252,6 +251,10 @@ class ItemController extends Controller
 	{
 		$model    = $this->loadModel();
         $status   = $model->getStatus();
+        if($model->user_id !=  Yii::app()->user->getId())
+        {
+			throw new CHttpException(403,'Not Authrized');
+        }
 
 		// Uncomment the following line if AJAX validation is needed
 		// $this->performAjaxValidation($model);
@@ -314,7 +317,7 @@ class ItemController extends Controller
 		$model->unsetAttributes();  // clear any default values
 		if(isset($_GET['item']))
 			$model->attributes=$_GET['item'];
-        $model->user_id = 11;
+        $model->user_id = Yii::app()->user->getId();
 		$this->render('manage',array(
 			'model'=>$model,
 		));

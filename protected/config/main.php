@@ -16,8 +16,8 @@ return array(
 	'import'=>array(
 		'application.models.*',
 		'application.components.*',
-                'application.modules.user.models.*',
-                'application.modules.user.components.*'
+        'application.modules.user.models.*',
+        'application.modules.user.components.*'
 	),
 
 	'modules'=>array(
@@ -70,11 +70,11 @@ return array(
 
 	// application components
 	'components'=>array(
-//		'user'=>array(
-//            'tableUsers' => 'openid_users',
-//            'tableProfiles' => 'openid_profiles',
-//            'tableProfileFields' => 'profiles_fields',
-//		),
+		'user'=>array(
+       //         'class' => 'WebUser',
+            'allowAutoLogin'=>true,
+            'loginUrl' => array('/user/login'),
+		),
 		// uncomment the following to enable URLs in path-format
 		
 		'urlManager'=>array(
