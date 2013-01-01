@@ -1,0 +1,288 @@
+<?php
+
+/**
+ * This is the model class for table "item".
+ *
+ * The followings are the available columns in table 'item':
+ * @property integer $item_id
+ * @property string $item_name
+ * @property string $item_group
+ * @property string $item_pic
+ * @property double $item_init_price
+ * @property double $item_lowest_rise
+ * @property double $item_height_rise
+ * @property double $item_total_time
+ * @property double $item_direct_sale_price
+ */
+class item extends CActiveRecord
+{
+    private $validIMG;
+    private $main_item_pic;
+
+    private $upload_image_size = 1048576; // 1MB
+    private $allowed_image_type = array("image/jpg", "image/jpeg"); // 1MB
+    public  $img_map = array("main_item_pic"  => "top","top_item_pic" => "button", "left_item_pic" => "left","right_item_pic" => "right");
+
+    const IMAGE_HEIGHT = 100;
+    const IMAGE_WIDTH = 100;
+    const NOT_ALL_IMAGE_VALID = 1;
+    const SIZE_IS_TOO_BIG     = 2;
+
+	/**
+	 * Returns the static model of the specified AR class.
+	 * @return item the static model class
+	 */
+	public static function model($className=__CLASS__)
+	{
+		return parent::model($className);
+	}
+
+	/**
+	 * @return string the associated database table name
+	 */
+	public function tableName()
+	{
+		return 'item';
+	}
+   
+    /*
+     * setter for valid image
+     */
+    public function setValidIMG($validIMG)
+    {
+        $this->validIMG = $validIMG;
+    }
+    /*
+     *check if img is in valid img list 
+     */
+    public function isImgValid($attr, $param)
+    {
+        if(!isset($this->validIMG[$attr]))
+        {
+            $this->addError($attr, 'Please provide valid image');
+        }
+        return true;
+    } 
+
+
+    /**
+     * Check for uploaded image and validate if they are valid images
+     *
+     */
+    public function handleImageUpload($file_list, $numOfImage)
+    {
+        $pathList = array();
+        $list     = array();
+        foreach($file_list as $key=>$value)
+        {
+            if(!in_array($key, array("error", "size", "type", "tmp_name")))
+            {
+                continue;
+            }
+            if($key == "error")
+            {
+                $callback = function ($item) {
+                    if($item == 0)
+                        return true;
+                    return false;
+                };
+                $error = self::NOT_ALL_IMAGE_VALID;
+                
+            }
+            else if($key == "size")
+            {
+                $callback = function ($item) {
+                    if($item < $this->upload_image_size)
+                        return true;
+                    return false;
+                };
+                $error = self::SIZE_IS_TOO_BIG;
+            }
+            else if($key == "type")
+            {
+                $callback = function ($name) {
+                    $is_valid = false;
+                    foreach($this->allowed_image_type as $item)
+                    {
+                        if(strpos($name, $item) !== false)
+                        {
+                            $is_valid = true;
+                        }
+                    }
+                    return $is_valid;
+                };
+                $error = self::NOT_ALL_IMAGE_VALID;
+            }
+            else if($key == "tmp_name")
+            {
+                $pathList[key($value)] = $value ;
+                $callback = function ($item) {
+                    if(empty($item))
+                        return false;
+                    list($width, $height, $type, $attr) = getimagesize($item);
+                    if($width < self::IMAGE_WIDTH || $height  < self::IMAGE_HEIGHT)
+                    {
+                        return false;
+                    }
+                    return true;
+
+                };
+                $error = self::NOT_ALL_IMAGE_VALID;
+            }
+            $list[$key] = array_filter($value, $callback);
+        }
+        $prev = array_shift($list);
+        foreach($list as $key => $value)
+        {
+            $prev =  array_intersect_key($prev, $value);
+        }
+        $return = array();
+        foreach($prev as $key=>$value)
+        {
+            $return[$key] = $list['tmp_name'][$key] ; 
+        }
+        return $return;
+    }
+	/**
+	 * @return array validation rules for model attributes.
+	 */
+	public function rules()
+	{
+		// NOTE: you should only define rules for those attributes that
+		// will receive user inputs.
+		return array(
+			array('item_init_price, item_price_currency, item_group, item_lowest_price,  item_lowest_rise, item_height_rise, item_total_time, item_direct_sale_price', 'required'),
+			array('item_init_price, item_group, item_total_time, item_direct_sale_price', 'numerical'),
+            array('item_lowest_rise, item_height_rise', 
+                'match', 
+                "pattern" => "/^(-[0-9]+|[0-9]+)%?$/"
+            ),
+			array('item_name', 'length', 'max'=>100),
+			array('item_desc', 'length', 'max'=>200),
+			array('main_item_pic', 'isImgValid'),
+			// The following rule is used by search().
+			// Please remove those attributes that should not be searched.
+			array('item_id, item_name, item_group,  item_init_price,  item_lowest_rise, item_height_rise, item_total_time, item_direct_sale_price', 'safe', 'on'=>'search'),
+		);
+	}
+
+    public function saveFile($list)
+    {
+        $lastInsertId = Yii::app()->db->getLastInsertId(); 
+        $folder_name  = "./assets/item_" .  $lastInsertId;
+        if(!file_exists($folder_name))
+        {
+            mkdir($folder_name);
+        }
+        foreach($list as $key=>$value)
+        {
+            move_uploaded_file($value, $folder_name . "/" . $this->img_map[$key] . ".jpeg"); 
+        }
+    }
+
+	/**
+	 * @return array Item Currency 
+	 */
+    public function getAuctionDays()
+    {
+        $list = array();
+        for($i = 10; $i < 100; $i += 10)
+        {
+            $list[] = $i . " days";
+        } 
+        return $list; 
+    }
+
+	/**
+	 * @return array Item Currency 
+	 */
+    public function getCurrencyList()
+    {
+        return array(
+            "dollar", 
+            "euro", 
+            "JD" 
+        ); 
+    }
+
+	/**
+	 * @return array Item Groups 
+	 */
+    public function getItemGroups()
+    {
+        return array(
+            "Autos", 
+            "Real Estate", 
+            "Gifts" 
+        ); 
+    }
+
+	/**
+	 * @return array relational rules.
+	 */
+	public function relations()
+	{
+		// NOTE: you may need to adjust the relation name and the related
+		// class name for the relations automatically generated below.
+		return array(
+		);
+	}
+
+	/**
+	 * @return array customized attribute labels (name=>label)
+	 */
+	public function attributeLabels()
+	{
+		return array(
+			'item_id' => 'Item',
+			'item_name' => 'Item Name',
+			'item_group' => 'Item Group',
+			'main_item_pic' => 'Item Pic',
+			'left_item_pic' => 'Item Left Pic',
+			'top_item_pic' => 'Item Top Pic',
+			'right_item_pic' => 'Item Right Pic',
+			'item_init_price' => 'Item Init Price',
+			'item_price_currency' => 'Item Price Currency',
+			'item_lowest_rise' => 'Item Lowest Rise',
+			'item_height_rise' => 'Item Height Rise',
+			'item_total_time' => 'Item Total Time',
+			'item_direct_sale_price' => 'Item Direct Sale Price',
+            'item_desc'              => "Item Desc"
+		);
+	}
+
+	/**
+	 * Retrieves a list of models based on the current search/filter conditions.
+	 * @return CActiveDataProvider the data provider that can return the models based on the search/filter conditions.
+	 */
+	public function search()
+	{
+		// Warning: Please modify the following code to remove attributes that
+		// should not be searched.
+
+		$criteria=new CDbCriteria;
+
+		$criteria->compare('item_id',$this->item_id);
+
+		$criteria->compare('item_name',$this->item_name,true);
+
+		$criteria->compare('item_group',$this->item_group,true);
+
+		$criteria->compare('item_pic',$this->item_pic,true);
+
+		$criteria->compare('item_init_price',$this->item_init_price);
+
+
+		$criteria->compare('item_lowest_rise',$this->item_lowest_rise);
+
+		$criteria->compare('item_height_rise',$this->item_height_rise);
+
+		$criteria->compare('item_total_time',$this->item_total_time);
+
+		$criteria->compare('item_direct_sale_price',$this->item_direct_sale_price);
+
+		return new CActiveDataProvider('item', array(
+			'criteria'=>$criteria,
+		));
+	}
+}
