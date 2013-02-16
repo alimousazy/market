@@ -8,6 +8,7 @@
 class UserIdentity extends CUserIdentity
 {
 	private $_id;
+    private $email;
 	const ERROR_EMAIL_INVALID=3;
 	const ERROR_STATUS_NOTACTIV=4;
 	const ERROR_STATUS_BAN=5;
@@ -42,9 +43,14 @@ class UserIdentity extends CUserIdentity
 			$this->_id=$user->id;
 			$this->username=$user->username;
 			$this->errorCode=self::ERROR_NONE;
+            $this->email  = $user->email;
 		}
 		return !$this->errorCode;
 	}
+    public function getEmail()
+    {
+        return $this->email;
+    }
     
     /**
     * @return integer the ID of the user record

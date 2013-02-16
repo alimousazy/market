@@ -14,6 +14,7 @@ return array(
 
 	// autoloading model and component classes
 	'import'=>array(
+ 		'ext.mail.YiiMailMessage',
 		'application.models.*',
 		'application.components.*',
         'application.modules.user.models.*',
@@ -70,6 +71,13 @@ return array(
 
 	// application components
 	'components'=>array(
+ 		'mail' => array(
+ 			'class' => 'ext.mail.YiiMail',
+ 			'transportType' => 'php',
+ 			'viewPath' => 'application.views.mail',
+ 			'logging' => true,
+ 			'dryRun' => false
+ 		),
 		'user'=>array(
        //         'class' => 'WebUser',
             'allowAutoLogin'=>true,
